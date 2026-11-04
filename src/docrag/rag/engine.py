@@ -112,7 +112,32 @@ class RAGEngine:
             # 全局截断：旧实现按"每个子查询各取 top_k"返回，4 路召回可能塞 20 块进 prompt
             hits = hits[: self.settings.retrieve_top_k]
 
+        if self.settings.expand_neighbors:
+            hits = self._expand_neighbors(hits)
+
         return hits
+
+    def _expand_neighbors(self, hits: list[Hit]) -> list[Hit]:
+        """长表格被切分成多片时，把命中块的相邻片一起带上。
+
+        否则模型只看到表格的一部分，会得出"资料中没有完整清单"的错误结论。
+        """
+        expanded: list[Hit] = []
+        seen: set[str] = set()
+        for hit in hits:
+            if hit.chunk.id not in seen:
+                expanded.append(hit)
+                seen.add(hit.chunk.id)
+            if hit.chunk.content_type != "table":
+                continue
+            for sibling in self.store.table_siblings(hit.chunk):
+                if sibling.id in seen:
+                    continue
+                expanded.append(
+                    Hit(chunk=sibling, score=hit.score * 0.98, channels=("sibling",))
+                )
+                seen.add(sibling.id)
+        return expanded[: self.settings.retrieve_top_k * 3]
 
     # ---------- 生成 ----------
 

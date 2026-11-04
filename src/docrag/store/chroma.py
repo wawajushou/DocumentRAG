@@ -89,6 +89,44 @@ class ChromaStore:
             hits.append((self._to_chunk(chunk_id, text, meta), 1.0 - float(distance)))
         return hits
 
+    def table_siblings(self, chunk: Chunk, max_parts: int = 8) -> list[Chunk]:
+        """取同一张表被切分后的连续分片。
+
+        长表格在切分时变成多个 chunk_index 连续的块，只召回其中一片会导致
+        模型得出"资料里没有完整清单"的错误结论。
+        """
+        window = 12
+        data = self._collection.get(
+            where={
+                "$and": [
+                    {"file": {"$eq": chunk.file}},
+                    {"chunk_index": {"$gte": chunk.chunk_index - window}},
+                    {"chunk_index": {"$lte": chunk.chunk_index + window}},
+                ]
+            },
+            include=["documents", "metadatas"],
+        )
+        ids = data.get("ids") or []
+        siblings = [
+            self._to_chunk(chunk_id, text, meta)
+            for chunk_id, text, meta in zip(
+                ids, data["documents"] or [], data["metadatas"] or [], strict=False
+            )
+            if meta.get("content_type") == "table"
+        ]
+        by_index = {item.chunk_index: item for item in siblings}
+
+        run = [chunk]
+        index = chunk.chunk_index - 1
+        while index in by_index:
+            run.insert(0, by_index[index])
+            index -= 1
+        index = chunk.chunk_index + 1
+        while index in by_index:
+            run.append(by_index[index])
+            index += 1
+        return run[:max_parts]
+
     @staticmethod
     def _metadata(chunk: Chunk) -> dict:
         return {

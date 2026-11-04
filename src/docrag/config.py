@@ -91,6 +91,7 @@ class Settings(BaseSettings):
     bm25_weight: float = Field(default=1.0, gt=0)
     rrf_k: int = Field(default=60, ge=1)
     rewrite_enabled: bool = True                            # 查询重写（多一次 LLM 调用）
+    expand_neighbors: bool = True                           # 长表格分片时把相邻块一起带上
 
     # ---------- 重排（可选） ----------
     rerank_enabled: bool = False
