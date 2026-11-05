@@ -1,4 +1,4 @@
-"""清单与配置测试。"""
+﻿"""清单与配置测试。"""
 
 from __future__ import annotations
 
@@ -20,13 +20,13 @@ def test_manifest_roundtrip(tmp_path):
     assert entry is not None
     assert entry.doc_id == "hash1"
     assert entry.chunks == 12
-    assert loaded.embedding_changed is False
+    assert loaded.needs_rebuild is False
 
 
 def test_manifest_detects_embedding_change(tmp_path):
     path = tmp_path / "manifest.json"
     Manifest(path, "modelA@1024").save()
-    assert Manifest(path, "modelB@768").embedding_changed is True
+    assert Manifest(path, "modelB@768").needs_rebuild is True
 
 
 def test_manifest_remove(tmp_path):

@@ -17,7 +17,7 @@ from docrag.config import Settings
 from docrag.embedding.base import Embedder
 from docrag.ingest.manifest import Manifest
 from docrag.ingest.readers import read_document, scan_documents
-from docrag.ingest.splitter import split_pages
+from docrag.ingest.splitter import SPLITTER_VERSION, split_pages
 from docrag.store.chroma import ChromaStore
 from docrag.types import Chunk
 
@@ -56,8 +56,8 @@ class Indexer:
         report = SyncReport()
         notify = progress or logger.info
 
-        if self.manifest.embedding_changed:
-            notify("embedding 模型已变更，重建整个向量库")
+        if self.manifest.needs_rebuild:
+            notify("embedding 或切分参数已变更，重建整个向量库")
             self.store.wipe()
             self.manifest.reset()
 
@@ -146,4 +146,8 @@ class Indexer:
 
 
 def build_manifest(settings: Settings, embedder: Embedder) -> Manifest:
-    return Manifest(settings.storage_dir / "manifest.json", embedder.name)
+    strategy = (
+        f"cs={settings.chunk_size};ov={settings.chunk_overlap};"
+        f"mc={settings.max_chunk_chars};v={SPLITTER_VERSION}"
+    )
+    return Manifest(settings.storage_dir / "manifest.json", embedder.name, strategy)

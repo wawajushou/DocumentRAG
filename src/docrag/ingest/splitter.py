@@ -29,6 +29,9 @@ _HEADER_PATTERNS = (
 _LIST_RE = re.compile(r"^\s*(?:[-*+]|\d+[.、)])\s+\S")
 _MARKDOWN_HEADER_RE = re.compile(r"^(#{1,6})\s+(.+)$")
 
+# 切分策略版本：改了切分逻辑就 +1，让 manifest 自动触发重建
+SPLITTER_VERSION = 2
+
 
 def _is_header(line: str) -> bool:
     stripped = line.strip()
@@ -46,6 +49,17 @@ def _guess_level(line: str) -> int:
     if match:
         return min(match.group(1).count(".") + 1, 6)
     return 1
+
+
+def header_level(line: str) -> int | None:
+    """返回标题级别；不是标题返回 None。"""
+    stripped = line.strip()
+    markdown = _MARKDOWN_HEADER_RE.match(stripped)
+    if markdown:
+        return len(markdown.group(1))
+    if _is_header(stripped):
+        return _guess_level(stripped)
+    return None
 
 
 @dataclass(slots=True, frozen=True)
@@ -213,27 +227,18 @@ def split_pages(
         levels = sorted(stack)[-3:]  # 最多保留 3 级，避免 header 过长
         return " > ".join(stack[level] for level in levels)
 
-    def is_header_line(line: str) -> bool:
-        stripped = line.strip()
-        return bool(_MARKDOWN_HEADER_RE.match(stripped)) or _is_header(stripped)
-
-    def apply_header(line: str) -> None:
+    def apply_header(line: str, level: int) -> None:
         stripped = line.strip()
         markdown = _MARKDOWN_HEADER_RE.match(stripped)
-        if markdown:
-            level = len(markdown.group(1))
-            title = markdown.group(2).strip()
-        else:
-            level = _guess_level(stripped)
-            title = stripped
-
+        title = markdown.group(2).strip() if markdown else stripped
         stack[level] = title
         for deeper in [key for key in stack if key > level]:
             del stack[deeper]
 
     def flush(paragraphs: list[tuple[str, Kind]], page_number: int | None) -> None:
         texts = [text for text, kind in paragraphs if kind in ("text", "list")]
-        if not texts:
+        # 只有标题、没有正文的块直接丢弃，避免空壳块占用检索名额
+        if not any(not text.strip().startswith("#") for text in texts):
             return
         for chunk in _pack(texts, chunk_size, overlap):
             drafts.append(
@@ -273,10 +278,18 @@ def split_pages(
                 continue
 
             for line in block_text.split("\n"):
-                if is_header_line(line):
-                    flush(paragraphs, page.page)  # 先用旧标题收尾
-                    paragraphs = []
-                    apply_header(line)            # 再更新标题栈
+                level = header_level(line)
+                if level is not None:
+                    if level <= 2:
+                        # 一级/二级标题作为强边界：先收尾，标题只进 header 元数据
+                        flush(paragraphs, page.page)
+                        paragraphs = []
+                        apply_header(line, level)
+                    else:
+                        # 三级以下不断开，标题保留在正文里作为小节标记
+                        apply_header(line, level)
+                        paragraphs.append((line, kind))
+                    continue
                 paragraphs.append((line, kind))
 
         flush(paragraphs, page.page)

@@ -24,9 +24,10 @@ class FileEntry:
 class Manifest:
     VERSION = 1
 
-    def __init__(self, path: Path, embedding: str):
+    def __init__(self, path: Path, embedding: str, strategy: str = ""):
         self.path = path
         self.embedding = embedding
+        self.strategy = strategy
         self.files: dict[str, FileEntry] = {}
         self._load()
 
@@ -45,20 +46,22 @@ class Manifest:
             )
 
     @property
-    def embedding_changed(self) -> bool:
+    def needs_rebuild(self) -> bool:
+        """换 embedding 模型或改切分参数时，整个库需要重建。"""
         if not self.path.exists():
             return False
         try:
             raw = json.loads(self.path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             return False
-        return raw.get("embedding") != self.embedding
+        return raw.get("embedding") != self.embedding or raw.get("strategy") != self.strategy
 
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "version": self.VERSION,
             "embedding": self.embedding,
+            "strategy": self.strategy,
             "files": {name: asdict(entry) for name, entry in sorted(self.files.items())},
         }
         self.path.write_text(
