@@ -29,7 +29,7 @@ def test_header_attached_to_following_chunks():
 
 
 def test_chinese_number_body_not_treated_as_header():
-    text = "一、概述\n本章说明仪表盘。\n\n十、二十个通道同时上报时，需要做优先级仲裁。"
+    text = "一、概述\n本章说明系统结构。\n\n十、二十个通道同时上报时，需要做优先级仲裁。"
     drafts = split_pages([Page(text=text)], chunk_size=400)
     headers = {d.header for d in drafts}
     assert "一、概述" in headers

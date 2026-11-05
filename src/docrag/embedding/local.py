@@ -1,9 +1,6 @@
-"""本地 SentenceTransformer 实现（CPU 优先）。
+"""本地 SentenceTransformer 实现。
 
-已处理三个容易踩的坑：
-1. Qwen3 系列查询侧必须加 instruction，否则检索效果明显打折
-2. 向量必须归一化，配合 Chroma 的 cosine 空间
-3. 支持 MRL 降维（只取前 N 维后重新归一化）
+处理查询侧 instruction、向量归一化和 MRL 降维。
 """
 
 from __future__ import annotations
@@ -17,20 +14,12 @@ from loguru import logger
 
 from docrag.config import Settings
 
-# 指令前缀（文档侧不加，只在查询侧加）
-QUERY_INSTRUCTIONS = {
-    "qwen3": "Instruct: 给定一个搜索查询，检索能回答该问题的段落\nQuery: ",
-    "bge": "为这个句子生成表示以用于检索相关文章：",
-}
+# bge 系列的查询前缀；文档侧不加
+BGE_QUERY_INSTRUCTION = "为这个句子生成表示以用于检索相关文章："
 
 
-def _instruction_for(model_id: str) -> str:
-    lowered = model_id.lower()
-    if "qwen3" in lowered:
-        return QUERY_INSTRUCTIONS["qwen3"]
-    if "bge" in lowered:
-        return QUERY_INSTRUCTIONS["bge"]
-    return ""
+def _query_instruction(model_id: str) -> str:
+    return BGE_QUERY_INSTRUCTION if "bge" in model_id.lower() else ""
 
 
 def resolve_model_path(model_id: str, model_dir: Path, source: str) -> Path:
@@ -88,14 +77,14 @@ class LocalEmbedder:
             )
 
         # sentence-transformers 6.x 把方法名从 get_sentence_embedding_dimension
-        # 改成了 get_embedding_dimension，这里两个都兼容
+        # 改成了 get_embedding_dimension，两个方法名都兼容
         dim_reader = getattr(self._model, "get_embedding_dimension", None)
         if dim_reader is None:
             dim_reader = self._model.get_sentence_embedding_dimension
         native_dim = int(dim_reader())
         requested = settings.embedding_dimensions
         self._dim = requested if requested and requested < native_dim else native_dim
-        self._instruction = _instruction_for(settings.embedding_model)
+        self._instruction = _query_instruction(settings.embedding_model)
         self._prompt_name_supported = True
 
         logger.info(

@@ -3,7 +3,7 @@
 直接复用项目自己的 readers / splitter，保证和实际索引的切分完全一致。
 
 用法：
-  python scripts/bench_embedding.py --data ./data --models bge-base,qwen3-0.6b
+  python scripts/bench_embedding.py --data ./data --models bge-small,bge-base
   python scripts/bench_embedding.py --data ./data --queries data/queries.jsonl
 
 queries.jsonl 每行：
@@ -46,19 +46,14 @@ MODELS: dict[str, dict] = {
         "hf": "BAAI/bge-m3",
         "instruction": "",
     },
-    "qwen3-0.6b": {
-        "ms": "Qwen/Qwen3-Embedding-0.6B",
-        "hf": "Qwen/Qwen3-Embedding-0.6B",
-        "instruction": "Instruct: 给定一个搜索查询，检索能回答该问题的段落\nQuery: ",
-    },
 }
 
 DEFAULT_QUERIES = [
-    "仪表的工作电压范围是多少？",
-    "燃油表的显示策略是什么？",
-    "声音报警的优先级顺序是什么？",
-    "整车电源模式如何切换？",
-    "背景光的调节策略是什么？",
+    "系统的输入电压范围是多少？",
+    "主要功能模块有哪些？",
+    "日志保留多少天？",
+    "配置项如何修改？",
+    "异常情况下如何处理？",
 ]
 
 
@@ -136,7 +131,7 @@ def run_model(key, records, queries, cache_dir, batch_size, top_k, use_prompt):
     import torch
     from sentence_transformers import SentenceTransformer
 
-    # CPU 上强制 fp32：Qwen3 等 bf16 权重在缺少 AVX512-BF16 的机器上会慢 4-5 倍
+    # CPU 上强制 fp32，bfloat16 权重在缺少 AVX512-BF16 的机器上会明显变慢
     model = SentenceTransformer(
         path, device="cpu", model_kwargs={"dtype": torch.float32}
     )
@@ -202,7 +197,7 @@ def run_model(key, records, queries, cache_dir, batch_size, top_k, use_prompt):
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", default="./data")
-    parser.add_argument("--models", default="bge-base,qwen3-0.6b")
+    parser.add_argument("--models", default="bge-small,bge-base")
     parser.add_argument("--queries", default=None)
     parser.add_argument("--chunk-size", type=int, default=400)
     parser.add_argument("--overlap", type=int, default=60)

@@ -1,8 +1,4 @@
-"""日志初始化。
-
-控制台只输出 WARNING 以上（避免和 rich 的界面打架），
-完整日志写文件，ERROR 单独一份。
-"""
+"""日志初始化。控制台输出 WARNING 以上，完整日志写文件，ERROR 单独一份。"""
 
 from __future__ import annotations
 

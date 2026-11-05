@@ -1,8 +1,6 @@
 """Chroma 向量库封装。
 
-直接使用 chromadb，不经过 langchain：
-- 显式指定 cosine 空间（旧代码默认 L2，和归一化向量不匹配）
-- metadata 只存 Chroma 支持的基础类型（page 用 -1 表示未知）
+显式指定 cosine 空间；metadata 只存 Chroma 支持的基础类型（page 用 -1 表示未知）。
 """
 
 from __future__ import annotations
@@ -90,11 +88,7 @@ class ChromaStore:
         return hits
 
     def table_siblings(self, chunk: Chunk, max_parts: int = 8) -> list[Chunk]:
-        """取同一张表被切分后的连续分片。
-
-        长表格在切分时变成多个 chunk_index 连续的块，只召回其中一片会导致
-        模型得出"资料里没有完整清单"的错误结论。
-        """
+        """取同一张表被切分后的连续分片。"""
         window = 12
         data = self._collection.get(
             where={

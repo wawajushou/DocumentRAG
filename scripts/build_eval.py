@@ -1,10 +1,7 @@
 """生成评测集：按一级章节分批让 LLM 出题。
 
-产物是 data/eval.jsonl，每行：
-  {"question": "...", "answer": "...", "section": "...", "type": "..."}
-
-重点：要求模型出「不能直接照抄章节标题」的问题，否则评测集会像现在这样
-所有模型都 100% 命中，测不出任何差异。
+产物为 data/eval.jsonl，每行包含 question、answer、section、type。
+问题要求不能直接复述章节标题，否则评测集区分度不足。
 """
 
 from __future__ import annotations
@@ -26,7 +23,7 @@ from docrag.llm import create_llm  # noqa: E402
 
 SKIP_SECTIONS = {"版本记录", "目录", "项目介绍"}
 
-PROMPT = """你是汽车仪表盘项目的测试工程师。请根据下面的规范内容，出 {count} 道用于评测 RAG 问答系统的问题。
+PROMPT = """你是技术文档的测试工程师。请根据下面的规范内容，出 {count} 道用于评测 RAG 问答系统的问题。
 
 要求：
 1. 问题要像真实工程师会问的，**不要直接复述章节标题**。反例："工作电压范围是多少"（照抄标题）。正例："电瓶电压掉到 7V 时仪表还能正常显示吗"。

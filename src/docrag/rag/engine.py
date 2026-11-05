@@ -109,7 +109,7 @@ class RAGEngine:
         if self.settings.rerank_enabled and self.reranker is not None:
             hits = self.reranker.rerank(queries[0], hits, self.settings.retrieve_top_k)
         else:
-            # 全局截断：旧实现按"每个子查询各取 top_k"返回，4 路召回可能塞 20 块进 prompt
+            # 全局截断，避免多路召回把上下文撑爆
             hits = hits[: self.settings.retrieve_top_k]
 
         if self.settings.expand_neighbors:
@@ -118,10 +118,7 @@ class RAGEngine:
         return hits
 
     def _expand_neighbors(self, hits: list[Hit]) -> list[Hit]:
-        """长表格被切分成多片时，把命中块的相邻片一起带上。
-
-        否则模型只看到表格的一部分，会得出"资料中没有完整清单"的错误结论。
-        """
+        """长表格分片时，把命中块的相邻分片一起带上，保证表格内容完整。"""
         expanded: list[Hit] = []
         seen: set[str] = set()
         for hit in hits:

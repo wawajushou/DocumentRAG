@@ -1,12 +1,7 @@
 """文档读取：docx / pdf / txt / md。
 
-docx 不使用 docx2txt（它会把表格压成制表符文本、丢失标题层级）。
-这里直接解析 document.xml：
-- <w:tbl> 转成 Markdown 表格，保留行列结构
-- heading 样式转成 Markdown 标题（#），供切分器识别章节
-- toc 样式直接丢弃，避免目录条目覆盖真正的章节标题
-
-PDF 页码统一转成 1-based（旧代码直接显示 0-based，用户会看到"第 0 页"）。
+docx 直接解析 document.xml：表格转 Markdown，heading 样式转 Markdown 标题，
+toc 样式丢弃。PDF 页码从 1 开始。
 """
 
 from __future__ import annotations

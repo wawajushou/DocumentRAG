@@ -7,11 +7,7 @@ from dataclasses import dataclass, field
 
 @dataclass(slots=True, frozen=True)
 class Chunk:
-    """一个可检索的文本块。
-
-    id 是稳定标识：doc_id + 块序号。doc_id 由文件内容哈希决定，
-    因此内容不变时 id 不变，内容一变整篇文档的 id 全部更换（旧块按 file 清理）。
-    """
+    """可检索的文本块。id = doc_id + 块序号，doc_id 由文件名与内容哈希生成。"""
 
     id: str
     text: str

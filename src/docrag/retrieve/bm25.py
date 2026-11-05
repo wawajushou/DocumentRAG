@@ -1,9 +1,6 @@
 """BM25 关键词检索。
 
-相对旧实现的改动：
-1. 支持加载领域词典（data/dict.txt），避免 CAN总线 / IPK / DTC 被切碎
-2. 用 Chunk.id 去重，不再用内容哈希（不同文档的相同段落不会被合并）
-3. 分词结果缓存，重建索引时不必重复处理全文
+支持加载领域词典（data/dict.txt），改善专有名词的分词效果。
 """
 
 from __future__ import annotations

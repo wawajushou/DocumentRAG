@@ -1,8 +1,4 @@
-"""配置中心。
-
-所有配置只有一个来源优先级：环境变量 > .env > 代码默认值。
-API Key 不落任何代码文件，.env 已在 .gitignore 中。
-"""
+"""配置。优先级：环境变量 > .env > 默认值。"""
 
 from __future__ import annotations
 
@@ -72,8 +68,7 @@ class Settings(BaseSettings):
     llm_max_output_tokens: int | None = Field(default=None, ge=64)
 
     # ---------- Embedding ----------
-    # 实测：这份 24 万字规范上 bge-small 的 top-1 命中不输 Qwen3，但快 40 倍
-    # 长文档/多语言场景可换 Qwen/Qwen3-Embedding-0.6B（CPU 上较慢）
+    # 可选 BAAI/bge-small-zh-v1.5、bge-base-zh-v1.5、bge-m3
     embedding_model: str = "BAAI/bge-small-zh-v1.5"
     embedding_device: Literal["cpu", "cuda"] = "cpu"
     embedding_batch_size: int = Field(default=8, ge=1, le=128)

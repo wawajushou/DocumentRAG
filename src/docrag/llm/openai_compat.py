@@ -1,9 +1,6 @@
 """OpenAI 兼容协议的 LLM 实现（DeepSeek / MiMo 共用）。
 
-与旧实现的三点区别：
-1. 模型名和参数从 PROFILES 表来，不再硬编码过期的 deepseek-chat / mimo-v2-pro
-2. 重试捕获的是 openai SDK 的真实异常类型（旧代码只捕获内置 ConnectionError，永远不触发）
-3. 流式只在「建立连接」阶段重试，不会在已经吐出半截答案后重来
+流式只在建立连接阶段重试，避免已输出半截答案后重新生成。
 """
 
 from __future__ import annotations
@@ -128,7 +125,7 @@ class OpenAICompatLLM:
             if not item.choices:
                 continue
             delta = item.choices[0].delta
-            # 思考模式下 reasoning_content 与 content 分开，这里只取最终答案
+            # 思考模式下 reasoning_content 与 content 分开，只取 content
             text = getattr(delta, "content", None)
             if text:
                 yield text

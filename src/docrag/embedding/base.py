@@ -1,8 +1,6 @@
 """Embedding 接口。
 
-刻意区分 embed_documents / embed_query：
-Qwen3-Embedding 是 instruction-aware 的，查询侧要加指令前缀，
-文档侧不能加。旧代码用 HuggingFaceEmbeddings 一把梭，天然拿不到这个收益。
+区分 embed_documents / embed_query：查询侧需要加指令前缀，文档侧不加。
 """
 
 from __future__ import annotations
