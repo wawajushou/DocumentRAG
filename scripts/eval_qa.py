@@ -61,7 +61,7 @@ def main() -> None:
     parser.add_argument("--out", default="./data/reports/eval.json")
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--no-rewrite", action="store_true")
-    parser.add_argument("--top-k", type=int, default=5)
+    parser.add_argument("--top-k", type=int, default=0)
     args = parser.parse_args()
 
     settings = get_settings()

@@ -85,7 +85,7 @@ class Settings(BaseSettings):
     max_chunk_chars: int = Field(default=500, ge=200)  # 表格/代码块允许的上限
 
     # ---------- 检索 ----------
-    retrieve_top_k: int = Field(default=5, ge=1, le=50)
+    retrieve_top_k: int = Field(default=10, ge=1, le=50)
     candidate_k: int = Field(default=30, ge=5, le=200)      # 每路召回候选数
     dense_weight: float = Field(default=1.0, gt=0)
     bm25_weight: float = Field(default=1.0, gt=0)
